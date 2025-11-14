@@ -1,0 +1,191 @@
+```{R}
+source("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/Myfunctions.R")
+library(VennDiagram)
+```
+
+```{R, "Reading RDS"}
+
+uniqueCHIP_LTC42 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC42_UniqueCHIP_NA_P.rds")
+uniqueCNR_LTC42 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC42_UniqueCNR_NA_P.rds")
+
+uniqueCHIP_LTC99 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC99_UniqueCHIP_NA_P.rds")
+uniqueCNR_LTC99 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC99_UniqueCNR_NA_P.rds")
+
+```
+
+Unique Peak Analysis:
+```{R}
+
+# Comparison
+# Looking at number of overlaps - Venn diagram 
+#Peak annoation to see any differences 
+#Looking at unique regions between the overlaps 
+
+#CHIP comarison 
+
+
+overlap_of_unique_CHIP <- findOverlaps(uniqueCHIP_LTC42, uniqueCHIP_LTC99)
+uCHIP42 <- uniqueCHIP_LTC42[-queryHits(overlap_of_unique_CHIP)] 
+uCHIP99 <- uniqueCHIP_LTC99[-subjectHits(overlap_of_unique_CHIP)] 
+
+totalOverlap <- length(overlap_of_unique_CHIP)
+lengthCHIP42 <- length(uniqueCHIP_LTC42)
+lengthCHIP99 <- length(uniqueCHIP_LTC99)
+pdf("/Volumes/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniqueBetweenSamplesPlots/UniqueCHIP.pdf")
+draw.pairwise.venn(
+    area1 = lengthCHIP42,
+    area2 = lengthCHIP99,
+    cross.area = totalOverlap,
+    category = c("LCT42", "LCT99"), 
+    fill = c("red", "blue"),
+    alpha = 0.5, 
+    lty = "blank",
+    cex = 2,
+    cat.cex = 1.5,
+    cat.pos = c(-20, 20)
+
+)
+dev.off()
+
+# CNR: 
+
+
+overlap_of_unique_CNR <- findOverlaps(uniqueCNR_LTC42, uniqueCNR_LTC99)
+uCNR42 <- uniqueCNR_LTC42[-queryHits(overlap_of_unique_CNR)] 
+uCNR99 <- uniqueCNR_LTC99[-subjectHits(overlap_of_unique_CNR)] 
+
+totalOverlap <- length(overlap_of_unique_CNR)
+lengthCNR42 <- length(uniqueCNR_LTC42)
+lengthCNR99 <- length(uniqueCNR_LTC99)
+pdf("/Volumes/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniqueBetweenSamplesPlots/UniqueCNR.pdf")
+draw.pairwise.venn(
+    area1 = lengthCNR42,
+    area2 = lengthCNR99,
+    cross.area = totalOverlap,
+    category = c("LCT42", "LCT99"), 
+    fill = c("red", "blue"),
+    alpha = 0.5, 
+    lty = "blank",
+    cex = 2,
+    cat.cex = 1.5,
+    cat.pos = c(-20, 20)
+
+)
+dev.off()
+```
+
+Overlap Analysis: 
+```{R}
+
+overlapCHIP_LTC42 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC42_OverlapCHIP_NA_P.rds")
+overlapCNR_LTC42 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC42_OverlapCNR_NA_P.rds")
+
+overlapCHIP_LTC99 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC99_OverlapCHIP_NA_P.rds")
+overlapCNR_LTC99 <- readRDS("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniquePeaksCellLines/LTC99_OverlapCNR_NA_P.rds")
+
+
+```
+
+```{R}
+
+overlap_of_overlap_CHIP <- findOverlaps(overlapCHIP_LTC42, overlapCHIP_LTC99)
+overlapCHIP42 <- overlapCHIP_LTC42[-queryHits(overlap_of_overlap_CHIP)] 
+overlapCHIP99 <- overlapCHIP_LTC99[-subjectHits(overlap_of_overlap_CHIP)] 
+
+totalOverlap_CHIP_overlapSample <- length(overlap_of_overlap_CHIP)
+lengthCHIP42_overlapSample <- length(overlapCHIP_LTC42)
+lengthCHIP99_overlapSample <- length(overlapCHIP_LTC99)
+
+pdf("/Volumes/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniqueBetweenSamplesPlots/OverlapCHIP.pdf")
+draw.pairwise.venn(
+    area1 = lengthCHIP42_overlapSample,
+    area2 = lengthCHIP99_overlapSample,
+    cross.area = totalOverlap_CHIP_overlapSample,
+    category = c("LCT42", "LCT99"), 
+    fill = c("red", "blue"),
+    alpha = 0.5, 
+    lty = "blank",
+    cex = 2,
+    cat.cex = 1.5,
+    cat.pos = c(-20, 20)
+
+)
+dev.off()
+
+overlap_of_overlap_CNR <- findOverlaps(overlapCNR_LTC42, overlapCNR_LTC99)
+overlapCHIP42 <- overlapCNR_LTC42[-queryHits(overlap_of_overlap_CNR)] 
+overlapCHIP99 <- overlapCNR_LTC99[-subjectHits(overlap_of_overlap_CNR)] 
+
+totalOverlap_CNR_overlapSample <- length(overlap_of_overlap_CNR)
+lengthCNR42_overlapSample <- length(overlapCNR_LTC42)
+lengthCNR99_overlapSample <- length(overlapCNR_LTC99)
+
+pdf("/Volumes/JM/CHIP.v.CNR_Git/CTCF_Analysis/UniqueBetweenSamplesPlots/OverlapCNR.pdf")
+draw.pairwise.venn(
+    area1 = lengthCNR42_overlapSample,
+    area2 = lengthCNR99_overlapSample,
+    cross.area = totalOverlap_CNR_overlapSample,
+    category = c("LCT42", "LCT99"), 
+    fill = c("red", "blue"),
+    alpha = 0.5, 
+    lty = "blank",
+    cex = 2,
+    cat.cex = 1.5,
+    cat.pos = c(-20, 20)
+
+)
+dev.off()
+```
+
+Bed file creation of Unique Unique CHIP and CNR values: 
+
+Here I am seperating using the original Unique peaks to see if there is overlap. 
+With the overlap I am going to make a merged G range object with both cell lines overlapped Uninique regions 
+I will use these G range objects to plot two geatmaps. One for CNR and one for CHIP 
+
+CHIP = merged ( LTC42 overlapped unique regions and LTC99 overlapped unique regions ) for CHIP 
+CNR = merged ( LTC42 overlapped unique regions and LTC99 overlapped unique regions ) for CNR 
+Using GenomicRanges::reduce 
+```{R}
+
+overlap_of_unique_CHIP <- findOverlaps(uniqueCHIP_LTC42, uniqueCHIP_LTC99)
+overlap_of_uniqueCHIP42 <- uniqueCHIP_LTC42[queryHits(overlap_of_unique_CHIP)] 
+overlap_of_unique_CHIP99 <- uniqueCHIP_LTC99[subjectHits(overlap_of_unique_CHIP)] 
+
+overlap_of_unique_CNR <- findOverlaps(uniqueCNR_LTC42, uniqueCNR_LTC99)
+overlap_of_unique_CNR42 <- uniqueCNR_LTC42[queryHits(overlap_of_unique_CNR)] 
+overlap_of_unique_CNR99 <- uniqueCNR_LTC99[subjectHits(overlap_of_unique_CNR)] 
+
+#Making the G range objects merged 
+list_of_CNR_overlapUniques <- c(overlap_of_unique_CNR42, overlap_of_unique_CNR99)
+reduced_CNR_overlapUniques <- GenomicRanges::reduce(list_of_CNR_overlapUniques)
+
+list_of_CHIP_overlapUniques <- c(overlap_of_uniqueCHIP42, overlap_of_unique_CHIP99)
+reduced_CHIP_overlapUniques <- GenomicRanges::reduce(list_of_CHIP_overlapUniques)
+
+#Unique CHIP: 
+uniqueCHIP42 <- uniqueCHIP_LTC42[-queryHits(overlap_of_unique_CHIP)]
+uniqueCHIP99 <- uniqueCHIP_LTC99 [-subjectHits(overlap_of_unique_CHIP)]
+
+#Unique CNR: 
+uniqueCNR42 <- uniqueCNR_LTC42[-queryHits(overlap_of_unique_CNR)]
+uniqueCNR99 <- uniqueCNR_LTC99[-subjectHits(overlap_of_unique_CNR)]
+```
+
+```{R}
+#Making BED files: 
+write_bed(reduced_CNR_overlapUniques, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/OverlappedUniqueCNR.bed")
+write_bed(reduced_CHIP_overlapUniques, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/OverlappedUniqueCHIP.bed")
+
+#Unique of Unique CNR: 
+
+write_bed(uniqueCNR42, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/UniqueCNR_LTC42.bed")
+write_bed(uniqueCNR99, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/UniqueCNR_LTC99.bed")
+
+
+#Unique of Unique CHIP: 
+
+write_bed(uniqueCHIP42, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/UniqueCHIP_LTC42.bed")
+write_bed(uniqueCHIP99, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/OverlapsBetweenUniqueRegionsCTCF/UniqueCHIP_LTC99.bed")
+
+```

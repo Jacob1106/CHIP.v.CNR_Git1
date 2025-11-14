@@ -1,0 +1,123 @@
+```{R, "Source"}
+source("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/Myfunctions.R")
+```
+```{R}
+library(GenomicRanges)
+library(rtracklayer)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(tidyverse)
+library(ChIPpeakAnno)
+library(ggvenn)
+library(clusterProfiler)
+library(ggupset)
+library(ReactomePA)
+library(plyranges)
+```
+
+```{R}
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+
+file_list <- list(CHIP = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/NuRD/NarrowPeakFiles/CHIP/SJHGG059115_C108-LTC42_P26-MBD3-AB1_peaks.narrowPeak", CNR1 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/NuRD/NarrowPeakFiles/CNR/SJHGG059115_C115-LTC42_P30-MBD3-AB1_R1.macs2_peaks.narrowPeak", CNR2 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/NuRD/NarrowPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-MBD3-AB1_R1.macs2_peaks.narrowPeak", CNR3 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/NuRD/NarrowPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-MBD3-AB1_R2.macs2_peaks.narrowPeak")
+data <- import_samples(file_list)
+
+adj <- filter_by_pvalue(data, pvalue = 0.0001)
+
+CNR_List <- adj[2:4]
+CHIP_List <- adj[1]
+
+#Accounting for Overlaps: 
+CHIP_GRL <- GRangesList(CHIP_List)
+CHIP <- overlapGRangeList(CHIP_GRL, num_of_overlaps_required = 0)
+
+CNR_GRL <- GRangesList(CNR_List)
+CNR <- overlapGRangeList(CNR_GRL, num_of_overlaps_required = 1)
+
+#Making Venn Diagram of overlaps between CHIP and CNR 
+custom_venn_diagram(conditionA = "CHIP", conditionB = "CNR", DataA = CHIP, DataB = CNR)
+```
+
+Differential Peak Anaylsis: 
+
+```{R}
+overlaps <- findOverlaps(CHIP, CNR)
+
+uniqueCHIP <- CHIP[-queryHits(overlaps)]
+uniqueCNR <- CNR[-subjectHits(overlaps)]
+
+overlapCHIP <- CHIP[queryHits(overlaps)]
+overlapCNR <- CNR[subjectHits(overlaps)]
+```
+Writing BED files: 
+
+```{R}
+#unique Peak files 
+
+
+write_bed(uniqueCHIP, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/uniqueCHIP.bed")
+write_bed(uniqueCNR, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/uniqueCNR.bed")
+
+#Overlapped Peaks: 
+write_bed(overlapCHIP, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/overlap_CHIP.bed")
+write_bed(overlapCNR, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/overlap_CNR.bed")
+
+#Filtered and Merged BEDs: 
+write_bed(CHIP, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/filtered_CHIP.bed")
+write_bed(CNR, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/BEDFiles/NuRD_MBD3_BED/filtered_CNR.bed")
+```
+
+Proportion Overlap: 
+
+```{R}
+propOverlabTibble <- proportionOverlapTibble(object1 = CNR, object2 = CHIP, overlapobject1 = overlapCNR, overlapobject2 = overlapCHIP, object1_unique = uniqueCNR, object2_unique = uniqueCHIP)
+write.csv(propOverlabTibble, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/NuRD_Analysis/Proportion_Overlap_Tables/MBD3.csv")
+write_xlsx(propOverlabTibble, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/NuRD_Analysis/Proportion_Overlap_Tables/MBD3.xlsx" )
+```
+
+Width Analysis: 
+```{R}
+
+widthGGplot <- compareGRangeWidth(Obj1 = CNR, Obj2 = CHIP)
+ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/NuRD_Analysis/WidthAnalysisPlots/MBD3.png", widthGGplot, height = 7, width = 7, dpi = 300)
+saveRDS(widthGGplot, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/NuRD_Analysis/WidthAnalysisPlots/MBD3.rds")
+```
+
+Peak Annotation 
+```{R}
+peakAnno_Chip <- annotatePeak(CHIP, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+peakAnno_CNR <- annotatePeak(CNR, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+
+#Unique Peak Annotations: 
+
+unique_peak_anno_chip <- annotatePeak(uniqueCHIP, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+unique_peak_anno_cnr <- annotatePeak(uniqueCNR, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+```
+
+Peak Analysis: 
+```{R}
+upsetplot(peakAnno_CNR)
+plotAnnoPie(peakAnno_CNR)
+
+upsetplot(peakAnno_Chip)
+plotAnnoPie(peakAnno_Chip)
+
+upsetplot(unique_peak_anno_cnr)
+plotAnnoPie(unique_peak_anno_cnr)
+
+upsetplot(unique_peak_anno_chip)
+plotAnnoPie(unique_peak_anno_chip)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

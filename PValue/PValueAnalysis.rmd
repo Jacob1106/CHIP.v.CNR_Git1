@@ -1,0 +1,94 @@
+```{R, "Source Code"}
+
+source("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/GeneralR_script_CHIP_CUT/Myfunctions.R")
+
+```
+
+
+```{R, "Reading in Data"}
+
+#H3K27 First: 
+
+file_list <- list(CHIP = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/ChiP/SJHGG059115_C129-LTC42_AAVS1_D7_R1-H3K27me3-AB4_REP1_peaks.broadPeak",
+                CHIP2 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/ChiP/SJHGG059115_C130-LTC42_AAVS1_D7_R2-H3K27me3-AB4_REP1_peaks.broadPeak",
+                CHIP3 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/ChiP/SJHGG059115_C131-LTC42_AAVS1_D7_R3-H3K27me3-AB4_REP1_peaks.broadPeak",
+                CNR1 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-H3K27me3-AB4_R1.macs2_peaks.broadPeak",
+                CNR2 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-H3K27me3-AB4_R2.macs2_peaks.broadPeak"
+                )
+data <- import_samples(file_list)
+```
+
+```{R}
+# For the H3K27me3
+pValueList <- list(
+    CHIP1 = data$CHIP$pValue[which(data$CHIP$pValue < 11)],
+    CHIP2 = data$CHIP2$pValue[which(data$CHIP2$pValue < 11)],
+    CHIP3 = data$CHIP3$pValue[which(data$CHIP3$pValue < 11)], 
+    CNR1 = data$CNR1$pValue[which(data$CNR1$pValue < 11)], 
+    CNR2 = data$CNR2$pValue[which(data$CNR2$pValue < 11)]
+
+)
+df <- do.call(rbind, lapply(names(pValueList), function(x) {
+  data.frame(sample = x, value = pValueList[[x]])
+}))
+
+#Sample x sample basis
+pValue_Plot_sampleXsample_H3K27 <-ggplot(df, aes(x = value, colour = sample))+
+    geom_density(linewidth = 1.2)+
+    geom_vline(xintercept = 3, color = "black", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = 3, y = 0.6, label = "log10(p) = 3 (Filtering Cut Off of 0.001)", 
+           angle = 90, vjust = -0.5, hjust = 1.2, size = 5, fontface = "bold") +
+    theme_minimal(base_size = 16)+
+    theme(
+        plot.title = element_text(size = 22, face = "bold"),  # main title
+        axis.title = element_text(size = 18, face = "bold"),  # x & y titles
+        axis.text = element_text(size = 14),                  # tick labels
+        legend.text = element_text(size = 14),                # legend text
+        legend.title = element_text(size = 16, face = "bold") # legend title
+    )+
+    labs(title = "Variance between Samples in H3K27me3", x = "-log10(pvalue)")
+ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/PValue/Plots/PValuePlot_H3K27.png", pValue_Plot_sampleXsample_H3K27, height = 7, width = 7, dpi = 300)
+
+```
+
+```{R, "CTCF analysis"}
+
+file_list_CTCF <- list(
+    CNR42 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/CTCF/NarrowPeakFiles/CNR/SJHGG059115_C105-LTC42_P30_250K-CTCF-AB2_S3_R1.macs2_peaks.narrowPeak",
+    CNR99 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/CTCF/NarrowPeakFiles/CNR/SJHGG066267_C57-LTC99_P24_250K-CTCF-AB2_S11_R1.macs2_peaks.narrowPeak",
+    CHIP42 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/CTCF/NarrowPeakFiles/CHIP/SJHGG059115_C5-LTC42_P21-CTCF-AB2_REP1_peaks.narrowPeak",
+    CHIP99 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/CTCF/NarrowPeakFiles/CHIP/SJHGG066267_C2-LTC99_P30-CTCF-AB2_REP1_peaks.narrowPeak"
+)
+data_CTCF <- import_samples(file_list_CTCF)
+
+```
+
+```{R}
+
+pValueList_CTCF <- list(
+    CHIP42 = data_CTCF$CHIP42$pValue[which(data_CTCF$CHIP42$pValue < 11)],
+    CHIP99 = data_CTCF$CHIP99$pValue[which(data_CTCF$CHIP99$pValue < 11)],
+    CNR42 = data_CTCF$CNR42$pValue[which(data_CTCF$CNR42$pValue < 11)], 
+    CNR99 = data_CTCF$CNR99$pValue[which(data_CTCF$CNR99$pValue < 11)] 
+)
+df_CTCF <- do.call(rbind, lapply(names(pValueList_CTCF), function(x) {
+  data.frame(sample = x, value = pValueList_CTCF[[x]])
+}))
+
+pValue_Plot_sampleXsample_CTCF <-ggplot(df_CTCF, aes(x = value, colour = sample))+
+    geom_density(linewidth = 1.2)+
+    geom_vline(xintercept = 4, color = "black", linetype = "dashed", linewidth = 1) +
+    annotate("text", x = 4, y = 0.6, label = "log10(p) = 4 (Filtering Cut Off of 0.0001)", 
+           angle = 90, vjust = -0.5, hjust = 1.2, size = 5, fontface = "bold") +
+    theme_minimal(base_size = 16)+
+    theme(
+        plot.title = element_text(size = 22, face = "bold"),  # main title
+        axis.title = element_text(size = 18, face = "bold"),  # x & y titles
+        axis.text = element_text(size = 14),                  # tick labels
+        legend.text = element_text(size = 14),                # legend text
+        legend.title = element_text(size = 16, face = "bold") # legend title
+    )+
+    labs(title = "Variance between Samples in CTCF", x = "-log10(pvalue)")
+ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/PValue/Plots/PValuePlot_CTCF.png", pValue_Plot_sampleXsample_CTCF, height = 7, width = 7, dpi = 300)
+pValue_Plot_sampleXsample_CTCF
+```

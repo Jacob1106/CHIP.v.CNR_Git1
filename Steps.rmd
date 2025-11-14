@@ -1,0 +1,35 @@
+
+Lay Out of Initial Annalysis of NuRD: 
+
+1. Import and Filter: 
+->. Func = import_samples 
+->. Fitler_by pvalue + chromosome List 
+
+2. Unpack the List of GRange Objects into conditions. E.g. CNR vs CHIP: 
+->  E.G. CNR_List <- list[2:4]
+
+3. Convert to a GRangeList Object 
+-> GRangesList()
+
+4. Produced a merged GRange Object based on minimum number of overlaps: 
+-> overlapGRangeList(GrangeList, num_of_overlaps_required)
+
+5. Dofferential Peak analysis: 
+    Convert the finalised objects into unique and overlaped objects. 
+
+6. Write these new BED files 
+
+7. Look at proportion overlap: 
+-> proportionOverlapTibble(2 objects, 2 overlaps, 2 unique )
+
+8. Do width Analysis: 
+widthGGplot
+
+9. Do peak annotations for unique peaks and overlapped peaks
+
+10. Make merged BigWig files for each conditon DeepTools 
+
+11. Make a matrix using reference point - depending on specificity of target adjust start region and end region (-3000-3000 or -10000-10000)
+
+12. Make Heat maps Deep Tools 
+

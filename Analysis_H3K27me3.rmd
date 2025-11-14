@@ -1,0 +1,273 @@
+Reading In Files: 
+
+```{R, "Librarys"}
+# BiocManager::install(c("GenomicRange, rtracklayer", "ChIPseeker", "TxDb.Hsapiens.UCSC.hg38.knownGene", "org.Hs.eg.db"))
+
+library(GenomicRanges)
+library(rtracklayer)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Hs.eg.db)
+library(ChIPseeker)
+library(tidyverse)
+library(ChIPpeakAnno)
+library(ggvenn)
+library(clusterProfiler)
+txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+library(ggupset)
+library(ReactomePA)
+library(plyranges)
+```
+
+
+Reading in BroadPeak files to merge into one Genomic Ranges Object: 
+Going to filter individual Gr objects first: P values, chromosomes
+Filter = Filter number of overlapping regions to 2 out of 3 between samples to create 1 Gr object
+```{R, "Reading"}
+
+chp1 <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/CHiP/SJHGG059115_C129-LTC42_AAVS1_D7_R1-H3K27me3-AB4_REP1_peaks.broadPeak")
+chp2 <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/ChiP/SJHGG059115_C130-LTC42_AAVS1_D7_R2-H3K27me3-AB4_REP1_peaks.broadPeak")
+chp3 <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/ChiP/SJHGG059115_C131-LTC42_AAVS1_D7_R3-H3K27me3-AB4_REP1_peaks.broadPeak")
+blacklist <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/hg38.blacklist.bed.gz")
+
+cnr1 <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-H3K27me3-AB4_R1.macs2_peaks.broadPeak")
+cnr2 <- import("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/BroadPeakFiles/CNR/SJHGG059115_C145-LTC42_Ctrl-H3K27me3-AB4_R2.macs2_peaks.broadPeak")
+```
+```{R, "Before Merge filtering"}
+
+
+#Chip Seq
+chp_list <- list(chp1, chp2, chp3)
+for (x in seq_along(chp_list)){
+    #Convert -log10 values to normal p values
+    chp <- chp_list[[x]]
+    chp$pValue_norm <- 10^(-chp$pValue)
+
+    #Filtering p values
+    chp <- chp[which(chp$pValue_norm < 0.05), ]
+    chp_list[[x]] <- chp
+
+}
+chp1 <- chp_list[[1]]
+chp2 <- chp_list[[2]]
+chp3 <- chp_list[[3]]
+meta <- mcols(chp1)
+
+
+chp1 <- chp1[mcols(chp1)$pValue_norm < 0.001]
+chp2 <- chp2[mcols(chp2)$pValue_norm < 0.001]
+chp3 <- chp3[mcols(chp3)$pValue_norm < 0.001]
+chr <- c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY")
+chp1 <- chp1[seqnames(chp1) %in% chr]
+chp2 <- chp2[seqnames(chp2) %in% chr]
+chp3 <- chp3[seqnames(chp3) %in% chr]
+#Filtering BlackList
+chp1_clean <- subsetByOverlaps(chp1, blacklist, invert = TRUE)
+chp2_clean <- subsetByOverlaps(chp2, blacklist, invert = TRUE)
+chp3_clean <- subsetByOverlaps(chp3, blacklist, invert = TRUE)
+chpGRL <- GRangesList(chp1 = chp1, chp2 = chp2, chp3 = chp3)
+
+```
+```{R}
+#Cut and run
+
+
+
+cnr1$pValue_norm <- 10^(-cnr1$pValue)
+cnr2$pValue_norm <- 10^(-cnr2$pValue)
+
+
+
+cnr1 <- cnr1[mcols(cnr1)$pValue_norm < 0.001]
+cnr2 <- cnr2[mcols(cnr2)$pValue_norm < 0.001]
+
+chr <- c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY")
+cnr1 <- cnr1[seqnames(cnr1) %in% chr]
+cnr2 <- cnr2[seqnames(cnr2) %in% chr]
+
+
+
+cnrGRL <- GRangesList(cnr1 = cnr1, cnr2 = cnr2)
+
+```
+
+Finding Overlaped regions within conditions (Chip and CNR): 
+
+```{R, "Overlaps"}
+#Chip
+combined <- unlist(chpGRL)
+countOverlaps(combined)
+index <- which(countOverlaps(combined) > 2)
+combined_clean <- combined[index]
+combined_clean_chip <- GenomicRanges::reduce(combined_clean)
+export(combined_clean_chip, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Analysis/combined_clean_chip.bed")
+
+combined_cnr <- unlist(cnrGRL)
+countOverlaps(combined_cnr)
+index <- which(countOverlaps(combined_cnr) > 1)
+combined_clean_cnr <- combined_cnr[index]
+combined_clean_cnr <- GenomicRanges::reduce(combined_clean_cnr)
+export(combined_clean_cnr, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Analysis/combined_clean_cnr.bed")
+
+```
+
+Differential Peak Analysis: 
+
+```{R}
+
+cnrD <- combined_clean_cnr
+chipD <- combined_clean_chip
+
+overlaps <- findOverlaps(chipD, cnrD)
+
+uniqueChip <- chipD[-queryHits(overlaps)]
+uniqueCNR <- cnrD[-subjectHits(overlaps)]
+
+overlapCNR <- cnrD[subjectHits(overlaps)]
+overlapChip <- chipD[queryHits(overlaps)]
+
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/VennDiagram.pdf", height = 7, width = 7)
+makeVennDiagram(list(Chip = chipD, CNR = cnrD), 
+    fill = c("skyblue", "salmon"), 
+    cat.col = c("blue", "red"),
+    main = "Peak Overlap between Chip and CNR"
+)
+dev.off()
+
+```
+Edited BED file writing: 
+
+```{R}
+#unique Peak files 
+write_bed(uniqueChip, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/uniqueCHIP.bed")
+write_bed(uniqueCNR, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/uniqueCNR.bed")
+
+#Overlapped Peaks: 
+write_bed(overlapChip, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/OverLapped_CHIP.bed")
+write_bed(overlapCNR, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/OverLapped_CNR.bed")
+
+#Filtered and Merged BEDs: 
+write_bed(chipD, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/Overall_merged_CHIP.bed")
+write_bed(cnrD, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/H3K27me3/EditedBED_files/Overall_merged_CNR.bed")
+
+
+
+
+```
+Peak Annotation: 
+```{R}
+
+peakAnno_Chip <- annotatePeak(chipD, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+peakAnno_CNR <- annotatePeak(cnrD, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+
+#Unique Peak Annotations: 
+
+unique_peak_anno_chip <- annotatePeak(uniqueChip, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+unique_peak_anno_cnr <- annotatePeak(uniqueCNR, tssRegion = c(-3000, 3000), TxDb = txdb, annoDb = "org.Hs.eg.db")
+
+
+
+```
+
+
+
+
+
+Width Comparisons: 
+```{R}
+# Comparing the widths of the two data sets 
+wilcox.test(width(cnrD), width(chipD))
+widthAnalysis <- data.frame(
+    width = c(width(chipD), width(cnrD)),
+    condition = rep(c("Chip", "CNR"), c(length(chipD), length(cnrD)))
+)
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/WidthAnalysis.pdf")
+ggplot(widthAnalysis, aes(x = width, fill = condition))+
+geom_density(alpha = 0.4)+
+scale_x_log10()+ 
+theme_classic()+
+labs(title = "Peak width comparison", x = "Peak width (bp)", y = "Density")
+dev.off()
+```
+
+
+
+
+Proportion of bases overlapped 
+
+```{R}
+
+
+#Proportion over lap = Overlap Length / Average strand length (( length CNR + Length Chip ) / 2 )
+
+total_base_overlap <- 0
+totalwidthCNR <- sum(width(cnrD))
+totalwidthChip <- sum(width(chipD))
+
+
+for (x in 1:length(overlapCNR)){
+    over_lap_start <- max(start(overlapCNR[x]), start(overlapChip[x]))
+    over_lap_end <- min(end(overlapCNR[x]), end(overlapChip[x]))
+    overlap_length <- max(0, over_lap_end - over_lap_start)
+    total_base_overlap <- total_base_overlap + overlap_length
+
+}
+chip_prop_Overlap <- total_base_overlap / totalwidthChip
+cnr_prop_Overlap <- total_base_overlap / totalwidthCNR
+# overlap_start <- max(start(), b_start)
+# overlap_end <- min(a_end, b_end)
+# overlap_length <- max(0, overlap_end - overlap_start)
+
+```
+
+Total Unique coverage in base pairs: 
+
+```{R}
+
+
+
+total_base_unique_Chip <- sum(width(uniqueChip))
+total_base_unique_CNR <- sum(width(uniqueCNR))
+
+resultsTableBaseOverlap <- tibble(
+    sample = c("Chip", "CNR"),
+    ProportionOverlap = c(chip_prop_Overlap, cnr_prop_Overlap),
+    TotalPeakCoverage = c(totalwidthChip, totalwidthCNR),
+    UniqueBase = c(total_base_unique_Chip, total_base_unique_CNR)
+)
+write.csv(resultsTableBaseOverlap, "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Analysis/BaseOverlapTable.csv")
+resultsTableBaseOverlap <- read.csv("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Analysis/BaseOverlapTable.csv")
+```
+
+
+
+
+
+Peak Annotation Analysis:
+```{R}
+
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/PeakAnnotationPieChart_Chip.pdf", height = 7, width = 7)
+plotAnnoPie(peakAnno_Chip)
+dev.off()
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/PeakAnnotationPieChart_CNR.pdf", height = 7, width = 7)
+plotAnnoPie(peakAnno_CNR)
+dev.off()
+
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/upsetPlotChip.pdf", height = 9, width = 9)
+upsetplot(peakAnno_Chip)
+dev.off()
+pdf("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v.CnR/Plots/upsetPlotCNR.pdf", height = 9, width = 9)
+upsetplot(peakAnno_CNR)
+dev.off()
+
+```
+
+
+
+
+Functional enrichment Analysis: 
+
+```{R}
+
+chip_enrich <- enrichPathway(as.data.frame(peakAnno_Chip)$geneId)
+cnr_enrich <- enrichPathway(as.data.frame(peakAnno_CNR)$geneId)
+```
