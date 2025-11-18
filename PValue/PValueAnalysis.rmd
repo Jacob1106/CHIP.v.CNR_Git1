@@ -75,20 +75,20 @@ df_CTCF <- do.call(rbind, lapply(names(pValueList_CTCF), function(x) {
   data.frame(sample = x, value = pValueList_CTCF[[x]])
 }))
 
-pValue_Plot_sampleXsample_CTCF <-ggplot(df_CTCF, aes(x = value, colour = sample))+
+pValue_Plot_sampleXsample_CTCF1 <-ggplot(df_CTCF, aes(x = value, colour = sample))+
     geom_density(linewidth = 1.2)+
     geom_vline(xintercept = 4, color = "black", linetype = "dashed", linewidth = 1) +
     annotate("text", x = 4, y = 0.6, label = "log10(p) = 4 (Filtering Cut Off of 0.0001)", 
            angle = 90, vjust = -0.5, hjust = 1.2, size = 5, fontface = "bold") +
     theme_minimal(base_size = 16)+
     theme(
-        plot.title = element_text(size = 22, face = "bold"),  # main title
+        plot.title = element_text(size = 14, face = "bold"),  # main title
         axis.title = element_text(size = 18, face = "bold"),  # x & y titles
         axis.text = element_text(size = 14),                  # tick labels
         legend.text = element_text(size = 14),                # legend text
         legend.title = element_text(size = 16, face = "bold") # legend title
     )+
-    labs(title = "Variance between Samples in CTCF", x = "-log10(pvalue)")
-ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/PValue/Plots/PValuePlot_CTCF.png", pValue_Plot_sampleXsample_CTCF, height = 7, width = 7, dpi = 300)
-pValue_Plot_sampleXsample_CTCF
+    labs(title = "Variance between Samples in CTCF (2)", x = "-log10(pvalue)")
+ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/PValue/Plots/PValuePlot_CTCF.png", pValue_Plot_sampleXsample_CTCF1, height = 7, width = 7, dpi = 300)
+saveRDS(pValue_Plot_sampleXsample_CTCF1, "/Volumes/JM/CHIP.v.CNR_Git1/PValue/Plots/PValuePlot.rds")
 ```

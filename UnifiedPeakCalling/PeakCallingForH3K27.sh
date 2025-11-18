@@ -9,6 +9,7 @@ bsub -P baker -J 'H3K27-PeakCalling' -N -n 8 -R "rusage[mem=16GB]" -R "span[host
 -n H3KK27_PeakCalls \
 -B \
 -p 0.015 \
+--broad \
 --cutoff-analysis \
 --trackline \
 --outdir /research_jude/rgs01_jude/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CNR_H3K27me3_PeakCalls'

@@ -9,7 +9,7 @@ source("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/ChIP.v
 file_list_CTCF <- list(
     CNR42 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CNR_CTCF_PeakCalling/CNR_CTCF_42_PeakCalls_peaks.narrowPeak",
     CNR99 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CNR_CTCF_PeakCalling/CNR_CTCF_99_PeakCalls_peaks.narrowPeak",
-    CHIP42 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CHIP_CTCF_PeakCalling/CHIP_CTCF_42_PeakCalls_peaks.broadPeak",
+    CHIP42 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CHIP_CTCF_PeakCalling/CHIP_CTCF_42_PeakCalls_peaks.narrowPeak",
     CHIP99 = "/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/UnifiedPeakCalling/CHIP_CTCF_PeakCalling/CHIP_CTCF_99_PeakCalls_peaks.narrowPeak"
 )
 data_CTCF <- import_samples(file_list_CTCF)
@@ -35,13 +35,23 @@ pValue_Plot_sampleXsample_CTCF <-ggplot(df_CTCF, aes(x = value, colour = sample)
            angle = 90, vjust = -0.5, hjust = 1.2, size = 5, fontface = "bold") +
     theme_minimal(base_size = 16)+
     theme(
-        plot.title = element_text(size = 22, face = "bold"),  # main title
+        plot.title = element_text(size = 12, face = "bold"),  # main title
         axis.title = element_text(size = 18, face = "bold"),  # x & y titles
         axis.text = element_text(size = 14),                  # tick labels
         legend.text = element_text(size = 14),                # legend text
         legend.title = element_text(size = 16, face = "bold") # legend title
     )+
-    labs(title = "Variance between Samples in CTCF", x = "-log10(pvalue)")
-ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git/CTCF_Analysis_NewPeakCalling/PValue/Plots/PValuePlot_CTCF.png", pValue_Plot_sampleXsample_CTCF, height = 7, width = 7, dpi = 300)
+    labs(title = "Variance between Samples in CTCF: Using Different Peak Calling (1)", x = "-log10(pvalue)")
+ggsave("/Volumes/groups/bakergrp/projects/baker_data/bakergrp/analyses/JM/CHIP.v.CNR_Git1/CTCF_Analysis_NewPeakCalling/PValue/Plots/PValuePlot_CTCF.png", pValue_Plot_sampleXsample_CTCF, height = 7, width = 7, dpi = 300)
 pValue_Plot_sampleXsample_CTCF
+```
+
+```{R}
+pValue_Plot_sampleXsample_CTCF1 <- readRDS("/Volumes/JM/CHIP.v.CNR_Git1/PValue/Plots/PValuePlot.rds")
+
+pValue_Plot_sampleXsample_CTCF1
+list <- list(pValue_Plot_sampleXsample_CTCF, pValue_Plot_sampleXsample_CTCF1)
+combined <- wrap_plots(list, ncol = 2)
+
+ggsave("/Volumes/JM/CHIP.v.CNR_Git1/CTCF_Analysis_NewPeakCalling/PValue/Plots/MergedPvaluePlotBetweenNewPeakAndOldPeaks.png", combined, height = 7, width = 12, dpi = 300)
 ```
